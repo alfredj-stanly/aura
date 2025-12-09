@@ -35,6 +35,7 @@ pub struct InferResponse {
     pub gender: GenderDistribution,
     pub age_bucket: AgeBucketDistribution,
     pub organization: Option<String>,
+    pub region_hint: Option<String>,
     pub confidence: f64,
     pub edge_case: bool,
 }

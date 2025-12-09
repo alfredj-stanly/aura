@@ -1,34 +1,50 @@
 use ntex::web::{self, HttpResponse};
 
 use crate::model::{AgeBucketDistribution, GenderDistribution, InferRequest, InferResponse};
+use crate::openai::OpenAIClient;
 
 pub async fn health() -> HttpResponse {
     HttpResponse::Ok().body("As strong as an Oak!")
 }
 
-pub async fn infer(body: web::types::Json<InferRequest>) -> HttpResponse {
+pub async fn infer(
+    body: web::types::Json<InferRequest>,
+    openai: web::types::State<OpenAIClient>,
+) -> HttpResponse {
     println!("Recived request for: {}", body.name);
 
     // Extract Organisation
     let organization = body.email.split('@').nth(1).map(|s| s.to_string());
 
-    let response = InferResponse {
-        gender: GenderDistribution {
-            male: 0.50,
-            female: 0.45,
-            others: 0.05,
-        },
-        age_bucket: AgeBucketDistribution {
-            age_18_24: 0.05,
-            age_25_34: 0.65,
-            age_35_34: 0.25,
-            age_45_plus: 0.03
-        },
+    // Call openai for inferense
+    let result = openai.infer(&body.name, &body.email).await;
 
-        organization,
-        confidence: 0.0,
-        edge_case: true,
-    };
+    match result {
+        Ok(inference) => {
+            let response = InferResponse {
+                gender: GenderDistribution {
+                    male: inference.gender.male,
+                    female: inference.gender.female,
+                    others: inference.gender.others,
+                },
+                age_bucket: AgeBucketDistribution {
+                    age_18_24: inference.age_bucket.age_18_24,
+                    age_25_34: inference.age_bucket.age_25_34,
+                    age_35_34: inference.age_bucket.age_35_44,
+                    age_45_plus: inference.age_bucket.age_45_plus,
+                },
 
-    HttpResponse::Ok().json(&response)
+                organization,
+                confidence: inference.confidence,
+                region_hint: inference.region_hint,
+                edge_case: false,
+            };
+
+            HttpResponse::Ok().json(&response)
+        }
+        Err(e) => {
+            eprintln!("Inference failed from open-ai side: {e}");
+            HttpResponse::InternalServerError().body(format!("inference failed: {}", e))
+        }
+    }
 }
