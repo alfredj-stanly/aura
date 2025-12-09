@@ -11,8 +11,6 @@ pub async fn infer(
     body: web::types::Json<InferRequest>,
     openai: web::types::State<OpenAIClient>,
 ) -> HttpResponse {
-    println!("Recived request for: {}", body.name);
-
     // Extract Organisation
     let organization = body.email.split('@').nth(1).map(|s| s.to_string());
 
