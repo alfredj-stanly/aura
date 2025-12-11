@@ -4,8 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct InferRequest {
     pub name: String,
     pub email: String,
-    pub profile_picture_url: Option<String>,
-    pub provider: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

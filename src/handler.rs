@@ -4,7 +4,7 @@ use crate::model::{AgeBucketDistribution, GenderDistribution, InferRequest, Infe
 use crate::openai::OpenAIClient;
 
 pub async fn health() -> HttpResponse {
-    HttpResponse::Ok().body("As strong as an Oak!")
+    HttpResponse::Ok().body("As strong as an Ox!")
 }
 
 pub async fn infer(

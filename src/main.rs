@@ -2,7 +2,6 @@ mod handler;
 mod model;
 mod openai;
 mod router;
-mod vision;
 
 use ntex::web::{self, App};
 use openai::OpenAIClient;
