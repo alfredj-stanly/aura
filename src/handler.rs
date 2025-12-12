@@ -1,6 +1,8 @@
 use ntex::web::{self, HttpResponse};
 
-use crate::model::{AgeBucketDistribution, GenderDistribution, InferRequest, InferResponse};
+use crate::model::{
+    AgeBucketDistribution, GazeRequest, GenderDistribution, InferRequest, InferResponse,
+};
 use crate::openai::OpenAIClient;
 
 pub async fn health() -> HttpResponse {
@@ -43,6 +45,33 @@ pub async fn infer(
         Err(e) => {
             eprintln!("Inference failed from open-ai side: {e}");
             HttpResponse::InternalServerError().body(format!("inference failed: {}", e))
+        }
+    }
+}
+
+pub async fn gaze(
+    body: web::types::Json<GazeRequest>,
+    openai: web::types::State<OpenAIClient>,
+) -> HttpResponse {
+    let organization = body.email.split('a').nth(1).map(|s| s.to_string());
+
+    let result = openai
+        .gaze(
+            &body.email,
+            body.name.as_deref(),
+            body.profile_pic_url.as_deref(),
+            body.browsing_history.as_deref(),
+        )
+        .await;
+
+    match result {
+        Ok(mut response) => {
+            response.organization = organization;
+            HttpResponse::Ok().json(&response)
+        }
+        Err(e) => {
+            eprintln!("Gaze inference failed: {e}");
+            HttpResponse::InternalServerError().body(format!("Inference failed: {e}"))
         }
     }
 }
