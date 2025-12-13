@@ -2,7 +2,7 @@
 
 > *"Absence is the highest form of presence; AURA listens when users say nothing."*
 
-Probabilistic identity inference at enterprise scale—fast, ethical and revenue-aware.
+Probabilistic identity inference at enterprise scale; fast, ethical and reliable.
 
 ---
 
@@ -176,18 +176,9 @@ AURA directly enables:
 
 ## Team
 
-**Responsible**: Jez Mundy, Allie Zhang, Utkarsh Srivastava  
-**Accountable**: Charl Porter, Kiran Suryanarayana, Utkarsh Srivastava  
+**Responsible**: Jez Mundy, Allie Zhang, Utkarsh Srivastava, Aj Stanly  
+**Accountable**: Charl Porter, Kiran Suryanarayana, Sudipta  
 **Consulted**: Legal, Data Governance  
-**Informed**: Program Management Team
-
----
-
-## A Final Thought
-
-AURA is not a model. AURA is not a feature.
-
-**AURA is the identity intelligence substrate of the platform.**
 
 ---
 
