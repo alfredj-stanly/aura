@@ -1,14 +1,14 @@
+use crate::{model::GazeResponse, prompt};
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-/// OpenAI chat message
 #[derive(Debug, Serialize)]
 struct Message {
     role: String,
     content: String,
 }
 
-/// OpenAI request body
 #[derive(Debug, Serialize)]
 struct ChatRequest {
     model: String,
@@ -16,7 +16,6 @@ struct ChatRequest {
     temperature: f64,
 }
 
-/// OpenAI response structures
 #[derive(Debug, Deserialize)]
 struct ChatResponse {
     choices: Vec<Choice>,
@@ -32,9 +31,8 @@ struct MessageResponse {
     content: String,
 }
 
-/// What we ask OpenAI to return
 #[derive(Debug, Deserialize)]
-pub struct InferenceResult {
+pub struct InferResult {
     pub gender: GenderResult,
     pub age_bucket: AgeBucketResult,
     pub region_hint: Option<String>,
@@ -52,10 +50,13 @@ pub struct GenderResult {
 pub struct AgeBucketResult {
     #[serde(rename = "18-24")]
     pub age_18_24: f64,
+
     #[serde(rename = "25-34")]
     pub age_25_34: f64,
+
     #[serde(rename = "35-44")]
     pub age_35_44: f64,
+
     #[serde(rename = "45+")]
     pub age_45_plus: f64,
 }
@@ -74,31 +75,8 @@ impl OpenAIClient {
         }
     }
 
-    pub async fn infer(&self, name: &str, email: &str) -> Result<InferenceResult, String> {
-        let prompt = format!(
-            r#"You are a demographic inference system. Given a name and email, estimate gender and age probabilities.
-
-Input:
-- Name: {}
-- Email: {}
-
-Respond ONLY with valid JSON in this exact format, no other text:
-{{
-  "gender": {{ "male": 0.0, "female": 0.0, "others": 0.0 }},
-  "age_bucket": {{ "18-24": 0.0, "25-34": 0.0, "35-44": 0.0, "45+": 0.0 }},
-  "region_hint": "string or null",
-  "confidence": 0.0
-}}
-
-Rules:
-- All probabilities must sum to 1.0 within their category
-- Confidence is 0.0-1.0 based on how certain you are
-- Use cultural and linguistic patterns from the name
-- Use email domain hints (TLD, organization type)
-- If uncertain, distribute probabilities more evenly"#,
-            name, email
-        );
-
+    /// Internal: make API call with given prompt
+    async fn call(&self, prompt: String) -> Result<String, String> {
         let request = ChatRequest {
             model: "gpt-4o-mini".to_string(),
             messages: vec![Message {
@@ -115,17 +93,35 @@ Rules:
             .json(&request)
             .send()
             .await
-            .map_err(|e| format!("Request failed: {}", e))?;
+            .map_err(|e| format!("Request failed: {e}"))?;
 
-        let chat_response: ChatResponse = response
-            .json()
+        // Debug: print raw response
+        let raw_text = response
+            .text()
             .await
-            .map_err(|e| format!("Failed to parse response: {}", e))?;
+            .map_err(|e| format!("Failed to read response: {e}"))?;
+        println!("Raw API response: {raw_text}");
 
-        let content = &chat_response.choices[0].message.content;
+        let chat_response: ChatResponse = serde_json::from_str(&raw_text)
+            .map_err(|e| format!("Failed to parse response: {e}"))?;
 
-        serde_json::from_str(content)
-            .map_err(|e| format!("Failed to parse inference result: {} - Raw: {}", e, content))
+        Ok(chat_response.choices[0].message.content.clone())
+
+        // let chat_response: ChatResponse = response
+        //     .json()
+        //     .await
+        //     .map_err(|e| format!("Failed to parse response: {e}"))?;
+
+        // Ok(chat_response.choices[0].message.content.clone())
+    }
+
+    /// V0 inference
+    pub async fn infer(&self, name: &str, email: &str) -> Result<InferResult, String> {
+        let pmt = prompt::infer_p(name, email);
+        let content = self.call(pmt).await?;
+
+        serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse inference result: {e} - Raw: {content}"))
     }
 
     pub async fn gaze(
@@ -134,76 +130,22 @@ Rules:
         name: Option<&str>,
         profile_pic_url: Option<&str>,
         browsing_history: Option<&[String]>,
-    ) -> Result<crate::model::GazeResponse, String> {
-        // Build input section based on what's provided
-        let mut inputs = vec![format!("- Email: {}", email)];
+    ) -> Result<GazeResponse, String> {
+        let mut inputs = vec![format!("- Email: {email}")];
 
         if let Some(n) = name {
-            inputs.push(format!("- Name: {}", n));
+            inputs.push(format!("- Name: {n}"));
         }
 
         if let Some(history) = browsing_history {
-            inputs.push(format!("- Browsing history: {}", history.join(", ")));
+            inputs.push(format!("- Browsing History: {}", history.join(", ")));
         }
 
-        let prompt = format!(
-            r#"You are a demographic inference system. Analyze the available signals and estimate gender, ethnicity, and age.
+        let has_profile_pic = profile_pic_url.is_some();
+        let pmt = prompt::gaze_p(&inputs.join("\n"), has_profile_pic);
+        let content = self.call(pmt).await?;
 
-Input:
-{}
-
-Respond ONLY with valid JSON in this exact format, no other text:
-{{
-  "gender": "male" | "female" | "undetermined",
-  "gender_confidence": "low" | "medium" | "strong",
-  "ethnicity": "string describing likely ethnicity",
-  "ethnicity_confidence": "low" | "medium" | "strong",
-  "age_group": "under_18" | "18-24" | "25-34" | "35-44" | "45-54" | "55-64" | "65+" | null,
-  "age_group_confidence": "low" | "medium" | "strong" | null,
-  "birth_year": number | null,
-  "birth_year_source": "email_pattern" | "profile_image" | "browsing_history" | null,
-  "reasoning": ["reason1", "reason2", ...],
-  "edge_case": true | false
-}}
-
-Rules:
-- gender: use "undetermined" if truly ambiguous
-- ethnicity: be specific but respectful (e.g. "south_asian", "east_asian", "western_european", "african", "latin_american", "middle_eastern")
-- birth_year: ONLY extract if a 4-digit year (1940-2012) appears in email username. Otherwise null.
-- birth_year_source: only "email_pattern" for now, null if no birth_year
-- age_group: infer from birth_year if available, otherwise from other signals, null if uncertain
-- reasoning: explain each conclusion, be specific about signals used
-- edge_case: true if conflicting signals or low confidence overall
-- confidence: "strong" only when multiple signals agree clearly"#,
-            inputs.join("\n")
-        );
-
-        let request = ChatRequest {
-            model: "gpt-4o-mini".to_string(),
-            messages: vec![Message {
-                role: "user".to_string(),
-                content: prompt,
-            }],
-            temperature: 0.1,
-        };
-
-        let response = self
-            .client
-            .post("https://api.openai.com/v1/chat/completions")
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .json(&request)
-            .send()
-            .await
-            .map_err(|e| format!("Request failed: {}", e))?;
-
-        let chat_response: ChatResponse = response
-            .json()
-            .await
-            .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-        let content = &chat_response.choices[0].message.content;
-
-        serde_json::from_str(content)
-            .map_err(|e| format!("Failed to parse gaze result: {} - Raw: {}", e, content))
+        serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to gaze result: {e} - Raw: {content}"))
     }
 }

@@ -53,7 +53,7 @@ pub async fn gaze(
     body: web::types::Json<GazeRequest>,
     openai: web::types::State<OpenAIClient>,
 ) -> HttpResponse {
-    let organization = body.email.split('a').nth(1).map(|s| s.to_string());
+    let organization = body.email.split('@').nth(1).map(|s| s.to_string());
 
     let result = openai
         .gaze(

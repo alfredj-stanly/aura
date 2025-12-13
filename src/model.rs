@@ -97,7 +97,7 @@ pub struct GazeRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GazeResponse {
-    pub gender: String,
+    pub gender: Gender,
     pub gender_confidence: Confidence,
 
     pub ethnicity: String,
