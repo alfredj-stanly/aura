@@ -1,8 +1,11 @@
 mod handler;
 mod model;
+
 mod openai;
-mod router;
+mod signal;
+
 mod prompt;
+mod router;
 
 use ntex::web::{self, App};
 use openai::OpenAIClient;
