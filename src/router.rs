@@ -1,9 +1,13 @@
 use ntex::web;
 
-use crate::handler;
+use crate::{agent::handler::analyze, handler};
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
-    cfg.route("/health", web::get().to(handler::health));
-    cfg.route("/infer", web::post().to(handler::infer));
-    cfg.route("/gaze", web::post().to(handler::gaze));
+    cfg
+    // v0
+    .route("/health", web::get().to(handler::health))
+    .route("/infer", web::post().to(handler::infer))
+    .route("/gaze", web::post().to(handler::gaze))
+    // v1
+    .route("/v1/analyze", web::post().to(analyze));
 }

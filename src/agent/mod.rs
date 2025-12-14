@@ -1,12 +1,11 @@
-pub mod io;
 pub mod local;
-pub mod metrics;
 pub mod r#type;
 
-pub use io::*;
+pub mod metrics;
+pub mod handler;
 
-pub use metrics::*;
 pub use r#type::*;
+pub use metrics::*;
 
 pub trait Agent: Send + Sync {
     fn analyze(
