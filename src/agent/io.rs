@@ -22,7 +22,7 @@ pub struct InferenceSignal {
     pub age_group_confidence: f64,
     
     pub birth_year: Option<u16>,
-    
+     
     pub organization: Option<String>,
     
     pub reasoning: Vec<String>,
