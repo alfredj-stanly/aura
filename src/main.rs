@@ -1,6 +1,7 @@
-mod agent;
+mod data;
 mod model;
-
+mod agent;
+     
 mod openai;
 mod prompt;
 

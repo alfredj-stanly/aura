@@ -1,7 +1,10 @@
 use chrono::Datelike;
 use std::time::Instant;
 
-use crate::agent::{AgeGroup, Agent, InferenceInput, InferenceSignal};
+use crate::{
+    agent::{AgeGroup, Agent, InferenceInput, InferenceSignal},
+    data::{PERSONAL_EMAIL_DOMAINS, domain},
+};
 
 pub struct LocalAgent;
 
@@ -15,7 +18,11 @@ impl LocalAgent {
     }
 
     fn extract_organization(&self, email: &str) -> Option<String> {
-        email.split('@').nth(1).map(|s| s.to_string())
+        let domain = email.split('@').nth(1)?;
+        if PERSONAL_EMAIL_DOMAINS.contains(&domain.to_lowercase().as_str()) {
+            return None;
+        }
+        Some(domain.to_string())
     }
 
     fn extract_birth_year(&self, email: &str) -> Option<u16> {
@@ -50,9 +57,10 @@ impl Agent for LocalAgent {
 
         signal.organization = self.extract_organization(&input.email);
         if signal.organization.is_some() {
-            signal
-                .reasoning
-                .push("Organization extracted from email domain.".to_string());
+            signal.reasoning.push(format!(
+                "Organization {} extracted from email domain.",
+                signal.organization.as_ref().unwrap(),
+            ));
         }
 
         if let Some(birth_year) = self.extract_birth_year(&input.email) {
