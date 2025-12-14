@@ -3,7 +3,7 @@ use std::time::Instant;
 
 use crate::{
     agent::{AgeGroup, Agent, InferenceInput, InferenceSignal},
-    data::{PERSONAL_EMAIL_DOMAINS, domain},
+    data::PERSONAL_EMAIL_DOMAINS,
 };
 
 pub struct LocalAgent;
