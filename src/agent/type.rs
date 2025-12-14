@@ -16,7 +16,7 @@ pub enum Gender {
     Undetermined,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Copy )]
 pub enum AgeGroup {
     #[serde(rename = "under_18")]
     Under18,
@@ -32,4 +32,36 @@ pub enum AgeGroup {
     Age55_64,
     #[serde(rename = "65+")]
     Age65Plus,
+}
+
+impl AgeGroup {
+    pub fn from_age(age: i32) -> Self {
+        match age {
+            0..=17 => Self::Under18,
+            18..=24 => Self::Age18_24,
+            25..=34 => Self::Age25_34,
+            35..=44 => Self::Age35_44,
+            45..=54 => Self::Age45_54,
+            55..=64 => Self::Age55_64,
+            _ => Self::Age65Plus,
+        }
+    }
+
+    pub fn to_one_hot(&self) -> [f64; 7] {
+        let mut probs = [0.0; 7];
+        probs[*self as usize] = 1.0;
+        probs
+    }
+
+    pub fn blend(distributions: &[[f64; 7]], weights: &[f64]) -> [f64; 7] {
+        let mut result = [0.0; 7];
+        let total_weight: f64 = weights.iter().sum();
+
+        for (dist, &w) in distributions.iter().zip(weights) {
+            for i in 0..7 {
+                result[i] += dist[i] * w / total_weight;
+            }
+        }
+        result
+    }
 }

@@ -8,6 +8,9 @@ pub use io::*;
 pub use metrics::*;
 pub use r#type::*;
 
-pub trait Agent {
-    fn analyze(&self, input: &InferenceInput) -> InferenceSignal;
+pub trait Agent: Send + Sync {
+    fn analyze(
+        &self,
+        input: &InferenceInput,
+    ) -> impl std::future::Future<Output = InferenceSignal> + Send;
 }
