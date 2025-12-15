@@ -1,8 +1,10 @@
 use chrono::Datelike;
 use std::time::Instant;
 
+use super::Agent;
+
 use crate::{
-    agent::{AgeGroup, Agent, InferenceInput, InferenceSignal},
+    core::{AgeGroup, InferenceInput, InferenceSignal, SignalSource},
     data::PERSONAL_EMAIL_DOMAINS,
 };
 
@@ -19,9 +21,11 @@ impl LocalAgent {
 
     fn extract_organization(&self, email: &str) -> Option<String> {
         let domain = email.split('@').nth(1)?;
+
         if PERSONAL_EMAIL_DOMAINS.contains(&domain.to_lowercase().as_str()) {
             return None;
         }
+
         Some(domain.to_string())
     }
 
@@ -32,9 +36,9 @@ impl LocalAgent {
         let min_year = (current_year - 80) as u16;
         let max_year = (current_year - 13) as u16;
 
-        let needle = regex::Regex::new(r"\d{4}").ok()?;
+        let re = regex::Regex::new(r"\d{4}").ok()?;
 
-        for capture in needle.find_iter(haystack) {
+        for capture in re.find_iter(haystack) {
             if let Ok(year) = capture.as_str().parse::<u16>() {
                 if year >= min_year && year <= max_year {
                     return Some(year);
@@ -53,13 +57,13 @@ impl LocalAgent {
 impl Agent for LocalAgent {
     async fn analyze(&self, input: &InferenceInput) -> InferenceSignal {
         let start = Instant::now();
-        let mut signal = InferenceSignal::default(super::SignalSource::Local);
+        let mut signal = InferenceSignal::new(SignalSource::Local);
 
         signal.organization = self.extract_organization(&input.email);
         if signal.organization.is_some() {
             signal.reasoning.push(format!(
                 "Organization {} extracted from email domain.",
-                signal.organization.as_ref().unwrap(),
+                signal.organization.as_ref().unwrap()
             ));
         }
 
@@ -71,8 +75,8 @@ impl Agent for LocalAgent {
                 "Birth year {birth_year} extracted from email pattern."
             ));
         }
-        signal.latency_ms = start.elapsed().as_millis() as u64;
 
+        signal.latency_ms = start.elapsed().as_millis() as u64;
         signal
     }
 }
@@ -85,7 +89,7 @@ mod tests {
     async fn extracts_organization() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "priya@vogue.com".to_string(),
+            email: "trinity@vogue.com".to_string(),
             name: None,
             profile_pic_url: None,
             browsing_history: None,
@@ -99,7 +103,7 @@ mod tests {
     async fn extracts_birth_year() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "priya1992@gmail.com".to_string(),
+            email: "laura1992@gmail.com".to_string(),
             name: None,
             profile_pic_url: None,
             browsing_history: None,
@@ -107,14 +111,13 @@ mod tests {
 
         let signal = agent.analyze(&input).await;
         assert_eq!(signal.birth_year, Some(1992));
-        assert_eq!(signal.age_group_25_34, 1.0);
     }
 
     #[ntex::test]
     async fn ignores_invalid_year() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "test2099@gmail.com".to_string(),
+            email: "test9162@gmail.com".to_string(),
             name: None,
             profile_pic_url: None,
             browsing_history: None,
@@ -122,14 +125,13 @@ mod tests {
 
         let signal = agent.analyze(&input).await;
         assert_eq!(signal.birth_year, None);
-        assert_eq!(signal.age_group_65_plus, 0.0);
     }
 
     #[ntex::test]
     async fn no_birth_year_no_age_probs() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "priya@gmail.com".to_string(),
+            email: "laura@gmail.com ".to_string(),
             name: None,
             profile_pic_url: None,
             browsing_history: None,

@@ -1,5 +1,5 @@
-use serde::Serialize;
 use super::r#type::SignalSource;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SourceMetrics {

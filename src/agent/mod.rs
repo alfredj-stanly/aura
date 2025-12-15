@@ -1,11 +1,8 @@
 pub mod local;
-pub mod r#type;
+pub use local::*;
 
-pub mod metrics;
-pub mod handler;
+use crate::core::{InferenceSignal, InferenceInput}; 
 
-pub use r#type::*;
-pub use metrics::*;
 
 pub trait Agent: Send + Sync {
     fn analyze(

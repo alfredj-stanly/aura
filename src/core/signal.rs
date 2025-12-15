@@ -1,70 +1,4 @@
-use serde::Serialize;
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SignalSource {
-    Local,
-    OpenAI,
-    Vision,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Gender {
-    Male,
-    Female,
-    Undetermined,
-}
-
-#[derive(Debug, Clone, Serialize, Copy)]
-pub enum AgeGroup {
-    #[serde(rename = "under_18")]
-    Under18,
-    #[serde(rename = "18-24")]
-    Age18_24,
-    #[serde(rename = "25-34")]
-    Age25_34,
-    #[serde(rename = "35-44")]
-    Age35_44,
-    #[serde(rename = "45-54")]
-    Age45_54,
-    #[serde(rename = "55-64")]
-    Age55_64,
-    #[serde(rename = "65+")]
-    Age65Plus,
-}
-
-impl AgeGroup {
-    pub fn from_age(age: i32) -> Self {
-        match age {
-            0..=17 => Self::Under18,
-            18..=24 => Self::Age18_24,
-            25..=34 => Self::Age25_34,
-            35..=44 => Self::Age35_44,
-            45..=54 => Self::Age45_54,
-            55..=64 => Self::Age55_64,
-            _ => Self::Age65Plus,
-        }
-    }
-
-    pub fn to_one_hot(&self) -> [f64; 7] {
-        let mut probs = [0.0; 7];
-        probs[*self as usize] = 1.0;
-        probs
-    }
-
-    pub fn blend(distributions: &[[f64; 7]], weights: &[f64]) -> [f64; 7] {
-        let mut result = [0.0; 7];
-        let total_weight: f64 = weights.iter().sum();
-
-        for (dist, &w) in distributions.iter().zip(weights) {
-            for i in 0..7 {
-                result[i] += dist[i] * w / total_weight;
-            }
-        }
-        result
-    }
-}
+use super::r#type::SignalSource;
 
 #[derive(Debug, Clone)]
 pub struct InferenceInput {
@@ -103,7 +37,7 @@ pub struct InferenceSignal {
 }
 
 impl InferenceSignal {
-    pub fn default(source: SignalSource) -> Self {
+    pub fn new(source: SignalSource) -> Self {
         Self {
             source,
 
@@ -144,6 +78,5 @@ impl InferenceSignal {
 
     pub fn has_gender_signal(&self) -> bool {
         self.gender_male > 0.0 || self.gender_female > 0.0 || self.gender_other > 0.0
-
     }
 }
