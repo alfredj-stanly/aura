@@ -1,6 +1,6 @@
+pub mod fusion;
 pub mod metric;
 pub mod signal;
-pub mod fusion;
 pub mod r#type;
 
 pub use metric::*;

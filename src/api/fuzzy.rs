@@ -1,10 +1,11 @@
+use futures::join;
+
 use ntex::{
-    util::join,
     web::{self, HttpResponse},
 };
 
 use crate::{
-    agent::{Agent, LocalAgent, VisionAgent},
+    agent::{Agent, LocalAgent, OnomasticAgent, VisionAgent},
     api::{AnalyzeRequest, FuzzyResponse, QueryParams, metrics::build_metrics},
     core::{InferenceInput, fuse},
 };
@@ -22,16 +23,22 @@ pub async fn handler(
     };
 
     let local = LocalAgent::new();
-    let local_future = local.analyze(&input);
+    let onomast = OnomasticAgent::new(api_key.get_ref().clone());
 
     let signals = if input.profile_pic_url.is_some() {
         let vision = VisionAgent::new(api_key.get_ref().clone());
-        let vision_future = vision.analyze(&input);
 
-        let (local_signal, vision_signal) = join(local_future, vision_future).await;
-        vec![local_signal, vision_signal]
+        let (local_signal, onomast_signal, vision_signal) = join!(
+            local.analyze(&input),
+            onomast.analyze(&input),
+            vision.analyze(&input)
+        );
+
+        vec![local_signal, onomast_signal, vision_signal]
     } else {
-        vec![local_future.await]
+        let (local_signal, onomast_signal) = join!(local.analyze(&input), onomast.analyze(&input));
+
+        vec![local_signal, onomast_signal]
     };
 
     let fused = fuse(signals.clone());
