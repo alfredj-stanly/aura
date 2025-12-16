@@ -35,9 +35,12 @@ pub fn parse_age_group(s: &str) -> Option<AgeGroup> {
 
 pub fn apply_result(signal: &mut InferenceSignal, result: VisionResult) {
     if result.is_human {
-        signal.gender_male = result.gender_male;
-        signal.gender_female = result.gender_female;
-        signal.gender_other = 1.0 - result.gender_male - result.gender_female;
+        // Only set gender if Vision actually detected something
+        if result.gender_male > 0.0 || result.gender_female > 0.0 {
+            signal.gender_male = result.gender_male;
+            signal.gender_female = result.gender_female;
+            signal.gender_other = (1.0 - result.gender_male - result.gender_female).max(0.0);
+        }
 
         if let Some(age_str) = &result.age_group {
             if let Some(age_group) = parse_age_group(age_str) {
@@ -48,7 +51,7 @@ pub fn apply_result(signal: &mut InferenceSignal, result: VisionResult) {
         return signal.reasoning.push(result.reasoning);
     }
 
-    signal
+    return signal
         .reasoning
-        .push("Profile picture is not human.".to_string())
+        .push("Profile picture is not human.".to_string());
 }

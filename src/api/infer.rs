@@ -3,8 +3,7 @@ use ntex::web::{self, HttpResponse};
 use crate::{
     agent::{Agent, LocalAgent, VisionAgent},
     api::{AnalyzeRequest, InferResponse, QueryParams, metrics::build_metrics},
-    core::{InferenceInput,
-    fuse}
+    core::{InferenceInput, fuse},
 };
 
 pub async fn handler(
@@ -28,11 +27,11 @@ pub async fn handler(
         signals.push(vision.analyze(&input).await);
     }
 
-    let fused = fuse(signals);
-    let include_metrics = !query.minimal.unwrap_or(false);
+    let fused = fuse(signals.clone());
 
+    let include_metrics = !query.minimal.unwrap_or(false);
     let response = InferResponse::from(fused.clone())
-        .with_metrics_if(include_metrics, || build_metrics(&fused, &input));
+        .with_metrics_if(include_metrics, || build_metrics(&signals, &fused, &input));
 
     HttpResponse::Ok().json(&response)
 }

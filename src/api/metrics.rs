@@ -3,10 +3,14 @@ use uuid::Uuid;
 
 use crate::core::{
     AbstentionMetrics, InferenceInput, InferenceMetrics, InferenceSignal, SignalSource,
-    SourceMetrics,
+    SourceMetrics, signal,
 };
 
-pub fn build_metrics(signal: &InferenceSignal, input: &InferenceInput) -> InferenceMetrics {
+pub fn build_metrics(
+    signals: &[InferenceSignal],
+    fused: &InferenceSignal,
+    input: &InferenceInput,
+) -> InferenceMetrics {
     let mut inputs_provided = vec!["email"];
     if input.name.is_some() {
         inputs_provided.push("name");
@@ -18,35 +22,51 @@ pub fn build_metrics(signal: &InferenceSignal, input: &InferenceInput) -> Infere
         inputs_provided.push("browsing_history");
     }
 
-    let mut contributed = Vec::new();
-    if signal.organization.is_some() {
-        contributed.push("organization");
-    }
-    if signal.birth_year.is_some() {
-        contributed.push("birth_year");
-    }
+    let sources_used: Vec<SourceMetrics> = signals
+        .iter()
+        .map(|s| {
+            let mut contributed = Vec::new();
+            if s.organization.is_some() {
+                contributed.push("organization".to_string());
+            }
+            if s.birth_year.is_some() {
+                contributed.push("birth_year".to_string());
+            }
+            if s.has_gender_signal() {
+                contributed.push("gender".to_string());
+            }
+            if s.has_age_signal() {
+                contributed.push("age".to_string());
+            }
+            if s.ethnicity.is_some() {
+                contributed.push("ethnicity".to_string());
+            }
+
+            SourceMetrics {
+                source: s.source.clone(),
+                latency_ms: s.latency_ms,
+                tokens_used: s.tokens_used,
+                contributed,
+                confidence: 1.0,
+            }
+        })
+        .collect();
 
     InferenceMetrics {
         request_id: Uuid::new_v4().to_string(),
         timestamp: Utc::now().to_rfc3339(),
         inputs_provided: inputs_provided.into_iter().map(String::from).collect(),
-        sources_used: vec![SourceMetrics {
-            source: SignalSource::Local,
-            latency_ms: signal.latency_ms,
-            tokens_used: signal.tokens_used,
-            contributed: contributed.into_iter().map(String::from).collect(),
-            confidence: 1.0,
-        }],
+        sources_used,
         sources_agreed: true,
         fusion_confidence: 1.0,
         abstentions: AbstentionMetrics {
-            gender: !signal.has_gender_signal(),
-            ethnicity: signal.ethnicity.is_none(),
-            age: signal.birth_year.is_none(),
+            gender: !fused.has_gender_signal(),
+            ethnicity: fused.ethnicity.is_none(),
+            age: fused.birth_year.is_none(),
         },
         edge_case: false,
-        total_tokens: signal.tokens_used.unwrap_or(0),
+        total_tokens: signals.iter().filter_map(|s| s.tokens_used).sum(),
         estimated_cost_usd: 0.0,
-        total_latency_ms: signal.latency_ms 
+        total_latency_ms: signals.iter().map(|s| s.latency_ms).max().unwrap_or(0),
     }
 }
