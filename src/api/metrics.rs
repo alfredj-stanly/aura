@@ -62,7 +62,7 @@ pub fn build_metrics(
         abstentions: AbstentionMetrics {
             gender: !fused.has_gender_signal(),
             ethnicity: fused.ethnicity.is_none(),
-            age: fused.birth_year.is_none(),
+            age: !fused.has_age_signal(),
         },
         edge_case: false,
         total_tokens: signals.iter().filter_map(|s| s.tokens_used).sum(),
