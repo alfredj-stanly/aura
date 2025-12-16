@@ -1,8 +1,10 @@
 pub mod local;
+pub mod vision;
+
 pub use local::*;
+pub use vision::VisionAgent;
 
-use crate::core::{InferenceSignal, InferenceInput}; 
-
+use crate::core::{InferenceInput, InferenceSignal};
 
 pub trait Agent: Send + Sync {
     fn analyze(

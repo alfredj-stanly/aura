@@ -79,4 +79,14 @@ impl InferenceSignal {
     pub fn has_gender_signal(&self) -> bool {
         self.gender_male > 0.0 || self.gender_female > 0.0 || self.gender_other > 0.0
     }
+
+    pub fn has_age_signal(&self) -> bool {
+    self.age_group_under_18 > 0.0
+        || self.age_group_18_24 > 0.0
+        || self.age_group_25_34 > 0.0
+        || self.age_group_35_44 > 0.0
+        || self.age_group_45_54 > 0.0
+        || self.age_group_55_64 > 0.0
+        || self.age_group_65_plus > 0.0
+}
 }
