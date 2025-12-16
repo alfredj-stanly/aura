@@ -1,3 +1,4 @@
+use ntex::util::join;
 use ntex::web::{self, HttpResponse};
 
 use crate::{
@@ -19,13 +20,18 @@ pub async fn handler(
     };
 
     let local = LocalAgent::new();
-    let mut signals = vec![local.analyze(&input).await];
+    let local_future = local.analyze(&input);
 
-    // Call vision agent if image is provided.
-    if input.profile_pic_url.is_some() {
+    let signals = if input.profile_pic_url.is_some() {
         let vision = VisionAgent::new(api_key.get_ref().clone());
-        signals.push(vision.analyze(&input).await);
-    }
+        let vision_future = vision.analyze(&input);
+
+        let (local_signal, vision_signal) = join(local_future, vision_future).await;
+
+        vec![local_signal, vision_signal]
+    } else {
+        vec![local_future.await]
+    };
 
     let fused = fuse(signals.clone());
 
