@@ -2,7 +2,7 @@ use super::r#type::SignalSource;
 
 #[derive(Debug, Clone)]
 pub struct InferenceInput {
-    pub email: String,
+    pub email: Option<String>,
     pub name: Option<String>,
     pub profile_pic_url: Option<String>,
     pub browsing_history: Option<Vec<String>>,

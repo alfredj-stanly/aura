@@ -27,7 +27,7 @@ impl OnomasticAgent {
             return Some(name.clone());
         }
 
-        let username = input.email.split('@').next()?;
+        let username = input.email.as_ref()?.split('@').next()?;
         let cleaned: String = username
             .replace('.', " ")
             .replace('_', " ")
@@ -57,7 +57,7 @@ impl Agent for OnomasticAgent {
             model: "gpt-4o-mini".to_string(),
             messages: vec![Message {
                 role: "user".to_string(),
-                content: prompt::analyze(&name, &input.email),
+                content: prompt::analyze(&name, &input.email.as_deref().unwrap_or("")),
             }],
             temperature: 0.1,
         };

@@ -2,8 +2,7 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::core::{
-    AbstentionMetrics, InferenceInput, InferenceMetrics, InferenceSignal, SignalSource,
-    SourceMetrics, signal,
+    AbstentionMetrics, InferenceInput, InferenceMetrics, InferenceSignal, SourceMetrics,
 };
 
 pub fn build_metrics(

@@ -59,21 +59,23 @@ impl Agent for LocalAgent {
         let start = Instant::now();
         let mut signal = InferenceSignal::new(SignalSource::Local);
 
-        signal.organization = self.extract_organization(&input.email);
-        if signal.organization.is_some() {
-            signal.reasoning.push(format!(
-                "Organization {} extracted from email domain.",
-                signal.organization.as_ref().unwrap()
-            ));
-        }
+        if let Some(email) = &input.email {
+            signal.organization = self.extract_organization(email);
+            if signal.organization.is_some() {
+                signal.reasoning.push(format!(
+                    "Organization {} extracted from email domain.",
+                    signal.organization.as_ref().unwrap()
+                ));
+            }
 
-        if let Some(birth_year) = self.extract_birth_year(&input.email) {
-            signal.birth_year = Some(birth_year);
-            signal.set_age_probs(self.birth_year_to_age_probs(birth_year));
+            if let Some(birth_year) = self.extract_birth_year(email) {
+                signal.birth_year = Some(birth_year);
+                signal.set_age_probs(self.birth_year_to_age_probs(birth_year));
 
-            signal.reasoning.push(format!(
-                "Birth year {birth_year} extracted from email pattern."
-            ));
+                signal.reasoning.push(format!(
+                    "Birth year {birth_year} extracted from email pattern."
+                ));
+            }
         }
 
         signal.latency_ms = start.elapsed().as_millis() as u64;
@@ -89,7 +91,7 @@ mod tests {
     async fn extracts_organization() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "trinity@vogue.com".to_string(),
+            email: Some("trinity@vogue.com".to_string()),
             name: None,
             profile_pic_url: None,
             browsing_history: None,
@@ -103,7 +105,7 @@ mod tests {
     async fn extracts_birth_year() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "laura1992@gmail.com".to_string(),
+            email: Some("laura1992@gmail.com".to_string()),
             name: None,
             profile_pic_url: None,
             browsing_history: None,
@@ -117,7 +119,7 @@ mod tests {
     async fn ignores_invalid_year() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "test9162@gmail.com".to_string(),
+            email: Some("test9162@gmail.com".to_string()),
             name: None,
             profile_pic_url: None,
             browsing_history: None,
@@ -131,7 +133,7 @@ mod tests {
     async fn no_birth_year_no_age_probs() {
         let agent = LocalAgent::new();
         let input = InferenceInput {
-            email: "laura@gmail.com ".to_string(),
+            email: Some("aparna@gmail.com ".to_string()),
             name: None,
             profile_pic_url: None,
             browsing_history: None,

@@ -4,7 +4,7 @@ use crate::core::{AgeGroup, Confidence, Gender, InferenceMetrics, InferenceSigna
 
 #[derive(Debug, Deserialize)]
 pub struct AnalyzeRequest {
-    pub email: String,
+    pub email: Option<String>,
     pub name: Option<String>,
     pub profile_pic_url: Option<String>,
     pub browsing_history: Option<Vec<String>>,
