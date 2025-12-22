@@ -1,15 +1,9 @@
 use chrono::Utc;
 use uuid::Uuid;
 
-use crate::core::{
-    AbstentionMetrics, InferenceInput, InferenceMetrics, InferenceSignal, SourceMetrics,
-};
+use crate::core::{InferenceInput, InferenceMetrics, InferenceSignal, SourceMetrics};
 
-pub fn build_metrics(
-    signals: &[InferenceSignal],
-    fused: &InferenceSignal,
-    input: &InferenceInput,
-) -> InferenceMetrics {
+pub fn build_metrics(signals: &[InferenceSignal], input: &InferenceInput) -> InferenceMetrics {
     let mut inputs_provided = vec!["email"];
     if input.name.is_some() {
         inputs_provided.push("name");
@@ -58,11 +52,6 @@ pub fn build_metrics(
         sources_used,
         sources_agreed: true,
         fusion_confidence: 1.0,
-        abstentions: AbstentionMetrics {
-            gender: !fused.has_gender_signal(),
-            ethnicity: fused.ethnicity.is_none(),
-            age: !fused.has_age_signal(),
-        },
         edge_case: false,
         total_tokens: signals.iter().filter_map(|s| s.tokens_used).sum(),
         estimated_cost_usd: 0.0,

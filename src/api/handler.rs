@@ -3,9 +3,7 @@ use ntex::web::{self, HttpResponse};
 
 use crate::{
     agent::{Agent, LocalAgent, OnomasticAgent, VisionAgent},
-    api::{
-        AnalyzeRequest, Format, FuzzyResponse, InferResponse, QueryParams, metrics,
-    },
+    api::{AnalyzeRequest, Format, FuzzyResponse, InferResponse, QueryParams, metrics},
     core::{InferenceInput, fuse},
 };
 
@@ -45,14 +43,14 @@ pub async fn infer(
 
     match query.format {
         Format::Raw => {
-            let response = InferResponse::from(fused.clone())
-                .with_metrics_if(include_metrics, || metrics::build_metrics(&signals, &fused, &input));
+            let response = InferResponse::from(fused)
+                .with_metrics_if(include_metrics, || metrics::build_metrics(&signals, &input));
             HttpResponse::Ok().json(&response)
         }
 
         Format::Fuzzy => {
-            let response = FuzzyResponse::from(fused.clone())
-                .with_metrics_if(include_metrics, || metrics::build_metrics(&signals, &fused, &input));
+            let response = FuzzyResponse::from(fused)
+                .with_metrics_if(include_metrics, || metrics::build_metrics(&signals, &input));
             HttpResponse::Ok().json(&response)
         }
     }

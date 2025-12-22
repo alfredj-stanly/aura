@@ -11,13 +11,6 @@ pub struct SourceMetrics {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct AbstentionMetrics {
-    pub gender: bool,
-    pub ethnicity: bool,
-    pub age: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
 pub struct InferenceMetrics {
     pub request_id: String,
     pub timestamp: String,
@@ -25,7 +18,6 @@ pub struct InferenceMetrics {
     pub sources_used: Vec<SourceMetrics>,
     pub sources_agreed: bool,
     pub fusion_confidence: f64,
-    pub abstentions: AbstentionMetrics,
     pub edge_case: bool,
     pub total_tokens: u32,
     pub estimated_cost_usd: f64,
