@@ -10,9 +10,19 @@ pub struct AnalyzeRequest {
     pub browsing_history: Option<Vec<String>>,
 }
 
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Format {
+    Raw,
+    #[default]
+    Fuzzy,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
     pub minimal: Option<bool>,
+    #[serde(default)]
+    pub format: Format,
 }
 
 #[derive(Debug, Serialize)]

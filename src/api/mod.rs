@@ -1,6 +1,5 @@
 pub mod dto;
-pub mod fuzzy;
-pub mod infer;
+pub mod handler;
 pub mod metrics;
 pub mod router;
 
