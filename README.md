@@ -20,24 +20,6 @@ When a user signs in via SSO, we capture their name, email and optionally their 
 
 **Key principle**: All outputs are *soft inference only*. No hard labels. No biometric storage. Just distributions, confidence scores and explainability.
 
-## Architecture Overview
-
-```
-[ User SSO Sign-in ]
-         ↓
-[ Identity Enrichment Event ]
-         ↓
-[ Pre-Silver SCV Tables ]
-         ↓
-[ AURA Core ]  ←→  [ OpenAI / Bedrock ]
-         ↓
-[ SCV Enriched Tables ]
-         ↓
-[ Permutive Activation ]
-```
-
-AURA sits between raw identity capture and activation platforms. It **never blocks login** and **never persists raw biometric data**.
-
 ## Tech Stack
 
 - **Core Language**: Rust (for deterministic latency; no GC pauses, no memory churn)
@@ -108,27 +90,31 @@ All fields are optional. At minimum, provide `name` or `email`.
 }
 ```
 
-## Inference Pipeline
+**With metrics (default):**
 
-### Phase 1: Email Signal Extraction
-- Domain parsing → organization resolution
-- Country TLD hints (`.co.uk` → UK, `.de` → Germany)
-- Username format analysis
+Responses include a `metrics` object with inference details:
+```json
+{
+  "gender": "female",
+  "...": "...",
+  "metrics": {
+    "request_id": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2024-12-22T10:30:00Z",
+    "inputs_provided": ["email", "name", "profile_pic_url"],
+    "sources": {
+      "local": { "latency_ms": 2, "tokens_used": null },
+      "onomastic": { "latency_ms": 245, "tokens_used": 128 },
+      "vision": { "latency_ms": 1200, "tokens_used": 512 }
+    },
+    "total_latency_ms": 1205,
+    "total_tokens_used": 640
+  }
+}
+```
 
-### Phase 2: Name Analysis
-- First/last name converted to embeddings
-- Matched against gender, age, and region clusters
-- Cultural name pattern recognition
+**Without metrics (minimal=true):**
 
-### Phase 3: Profile Image Inference (Optional)
-- **Never stored, never used for identity recognition**
-- Infers broad age band and apparent gender probability
-- Acts as a *confidence multiplier*, not a primary signal
-
-### Phase 4: Bayesian Fusion
-- All upstream signals fused into final distributions
-- Confidence score calculated
-- Edge cases flagged
+Add `?minimal=true` to exclude the metrics object for lighter responses.
 
 ## Legal & Privacy
 
@@ -160,17 +146,6 @@ AURA directly enables:
 - CTR uplift
 - Cost per 1,000 inferences
 - P95 inference latency
-
-## Roadmap
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 0 | Strategic lock, legal sign-off | ✅ Complete |
-| Phase 1 | Identity data capture (Google SSO) | ✅ Complete |
-| Phase 2 | AURA v0 text inference | ✅ Complete |
-| Phase 3 | Profile image inference | 🔄 In Progress |
-| Phase 4 | Behavioral calibration (SCV resonance) | 📋 Planned |
-| Phase 5 | Economic governor (cost vs revenue) | 📋 Planned |
 
 ## Team
 
