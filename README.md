@@ -47,45 +47,16 @@ AURA sits between raw identity capture and activation platforms. It **never bloc
 
 ## API Endpoints
 
-### `POST /infer` (v0)
+### `POST /v1/infer`
 
-The original inference endpoint returning full probability distributions.
+Single inference endpoint with configurable output format.
 
-**Request:**
-```json
-{
-  "email": "jane.smith@company.com",
-  "first_name": "Jane",
-  "last_name": "Smith",
-  "profile_pic_url": "https://example.com/photo.jpg",
-  "provider": "google"
-}
-```
+**Query Parameters:**
 
-**Response:**
-```json
-{
-  "gender": {
-    "male": 0.08,
-    "female": 0.89,
-    "other": 0.03
-  },
-  "age_bucket": {
-    "18-24": 0.10,
-    "25-34": 0.55,
-    "35-44": 0.28,
-    "45+": 0.07
-  },
-  "organization": "company.com",
-  "region_hint": "North America",
-  "confidence": 0.82,
-  "edge_case": false
-}
-```
-
-### `POST /gaze` (v1)
-
-The newer, more flexible endpoint with single-value outputs and reasoning.
+| Param | Values | Default | Description |
+|-------|--------|---------|-------------|
+| `format` | `fuzzy`, `raw` | `fuzzy` | Output format |
+| `minimal` | `true`, `false` | `false` | Exclude metrics |
 
 **Request:**
 ```json
@@ -97,16 +68,43 @@ The newer, more flexible endpoint with single-value outputs and reasoning.
 }
 ```
 
-**Response:**
+All fields are optional. At minimum, provide `name` or `email`.
+
+**Response (format=fuzzy, default):**
 ```json
 {
   "gender": "female",
+  "gender_confidence": "strong",
+  "ethnicity": "european",
+  "ethnicity_confidence": "medium",
   "age_group": "25-34",
-  "confidence": "strong",
-  "reasoning": {
-    "gender": "Name 'Jane' strongly associated with female gender across cultures",
-    "age": "Profile image suggests mid-20s to early-30s; browsing patterns consistent with younger professional demographic"
-  }
+  "age_group_confidence": "medium",
+  "organization": "company.com",
+  "reasoning": [
+    "Name 'Jane' strongly associated with female gender",
+    "Organization company.com extracted from email domain"
+  ]
+}
+```
+
+**Response (format=raw):**
+```json
+{
+  "gender_male": 0.08,
+  "gender_female": 0.89,
+  "gender_other": 0.03,
+  "ethnicity": "european",
+  "ethnicity_confidence": 0.72,
+  "age_group_under_18": 0.01,
+  "age_group_18_24": 0.10,
+  "age_group_25_34": 0.55,
+  "age_group_35_44": 0.28,
+  "age_group_45_54": 0.05,
+  "age_group_55_64": 0.01,
+  "age_group_65_plus": 0.00,
+  "birth_year": null,
+  "organization": "company.com",
+  "reasoning": ["..."]
 }
 ```
 
