@@ -6,6 +6,7 @@ pub enum SignalSource {
     Local,
     Vision,
     Onomastic,
+    Domain,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -85,3 +86,21 @@ impl Confidence {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct OrganizationIntelligence {
+    pub domain: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employee_count: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employee_count_source: Option<String>
+}
+

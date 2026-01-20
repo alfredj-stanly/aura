@@ -23,40 +23,47 @@ pub async fn infer(
     let onomast = OnomasticAgent::new(api_key.get_ref().clone());
     let domain = DomainAgent::new(api_key.get_ref().clone());
 
-    let signals = if input.profile_pic_url.is_some() {
-        let vision = VisionAgent::new(api_key.get_ref().clone());
+    let domain_future = async {
+        match &input.email {
+            Some(email) => domain.analyze(email).await,
+            None => None,
+        }
+    };
 
-        let (local_signal, onomast_signal, vision_signal, domain_signal) = join!(
+    let (signals, org_info) = if input.profile_pic_url.is_some() {
+        let vision = VisionAgent::new(api_key.get_ref().clone());
+        let (local_signal, onomast_signal, vision_signal, org) = join!(
             local.analyze(&input),
             onomast.analyze(&input),
             vision.analyze(&input),
-            domain.analyze(&input)
+            domain_future
         );
-
-        vec![local_signal, onomast_signal, vision_signal, domain_signal]
+        (vec![local_signal, onomast_signal, vision_signal], org)
     } else {
-        let (local_signal, onomast_signal, domain_signal) = join!(
+        let (local_signal, onomast_signal, org) = join!(
             local.analyze(&input),
             onomast.analyze(&input),
-            domain.analyze(&input)
+            domain_future
         );
-        vec![local_signal, onomast_signal, domain_signal]
+        (vec![local_signal, onomast_signal], org)
     };
 
     let fused = fuse(signals.clone());
-
     let include_metrics = !query.minimal.unwrap_or(false);
 
     match query.format {
         Format::Raw => {
-            let response = InferResponse::from(fused)
-                .with_metrics_if(include_metrics, || metrics::build_metrics(&signals, &input));
+            let response = InferResponse::from_signal(fused, org_info.clone())
+                .with_metrics_if(include_metrics, || {
+                    metrics::build_metrics(&signals, &input, org_info.as_ref())
+                });
             HttpResponse::Ok().json(&response)
         }
-
         Format::Fuzzy => {
-            let response = FuzzyResponse::from(fused)
-                .with_metrics_if(include_metrics, || metrics::build_metrics(&signals, &input));
+            let response = FuzzyResponse::from_signal(fused, org_info.clone())
+                .with_metrics_if(include_metrics, || {
+                    metrics::build_metrics(&signals, &input, org_info.as_ref())
+                });
             HttpResponse::Ok().json(&response)
         }
     }

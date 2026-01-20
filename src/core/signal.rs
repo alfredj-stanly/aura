@@ -1,3 +1,5 @@
+use crate::core::OrganizationIntelligence;
+
 use super::r#type::SignalSource;
 
 #[derive(Debug, Clone)]
@@ -28,7 +30,7 @@ pub struct InferenceSignal {
     pub age_group_65_plus: f64,
 
     pub birth_year: Option<u16>,
-    pub organization: Option<String>,
+    pub organization: Option<OrganizationIntelligence>,
 
     pub reasoning: Vec<String>,
 

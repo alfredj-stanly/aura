@@ -68,7 +68,12 @@ fn blend(signals: Vec<InferenceSignal>) -> InferenceSignal {
     result.birth_year = signals.iter().find_map(|s| s.birth_year);
 
     // Organization: first non-None
-    result.organization = signals.iter().find_map(|s| s.organization.clone());
+    // result.organization = signals.iter().find_map(|s| s.organization.clone());
+
+    result.organization = signals
+        .iter()
+        .filter_map(|s| s.organization.clone())
+        .max_by_key(|org| org.name.is_some() as u8);
 
     // Ethnicity: highest confidence wins
     if let Some(best) = signals

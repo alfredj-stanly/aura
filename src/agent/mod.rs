@@ -1,7 +1,9 @@
+pub mod domain;
 pub mod local;
 pub mod onomast;
 pub mod vision;
 
+pub use domain::DomainAgent;
 pub use local::*;
 pub use onomast::OnomasticAgent;
 pub use vision::VisionAgent;

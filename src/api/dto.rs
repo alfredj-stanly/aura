@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::core::{AgeGroup, Confidence, Gender, InferenceMetrics, InferenceSignal};
+use crate::core::{
+    AgeGroup, Confidence, Gender, InferenceMetrics, InferenceSignal, OrganizationIntelligence,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct AnalyzeRequest {
@@ -43,7 +45,7 @@ pub struct InferResponse {
     pub age_group_65_plus: f64,
 
     pub birth_year: Option<u16>,
-    pub organization: Option<String>,
+    pub organization: Option<OrganizationIntelligence>,
 
     pub reasoning: Vec<String>,
 
@@ -101,7 +103,7 @@ pub struct FuzzyResponse {
     pub age_group: Option<AgeGroup>,
     pub age_group_confidence: Confidence,
 
-    pub organization: Option<String>,
+    pub organization: Option<OrganizationIntelligence>,
 
     pub reasoning: Vec<String>,
 

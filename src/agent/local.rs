@@ -4,7 +4,7 @@ use std::time::Instant;
 use super::Agent;
 
 use crate::{
-    core::{AgeGroup, InferenceInput, InferenceSignal, SignalSource},
+    core::{AgeGroup, InferenceInput, InferenceSignal, OrganizationIntelligence, SignalSource},
     data::PERSONAL_EMAIL_DOMAINS,
 };
 
@@ -19,14 +19,20 @@ impl LocalAgent {
         chrono::Utc::now().year()
     }
 
-    fn extract_organization(&self, email: &str) -> Option<String> {
+    fn extract_organization(&self, email: &str) -> Option<OrganizationIntelligence> {
         let domain = email.split('@').nth(1)?;
 
         if PERSONAL_EMAIL_DOMAINS.contains(&domain.to_lowercase().as_str()) {
             return None;
         }
 
-        Some(domain.to_string())
+        Some(OrganizationIntelligence {
+            domain: domain.to_string(),
+            name: None,
+            category: None,
+            employee_count: None,
+            employee_count_source: None,
+        })
     }
 
     fn extract_birth_year(&self, email: &str) -> Option<u16> {
@@ -64,7 +70,7 @@ impl Agent for LocalAgent {
             if signal.organization.is_some() {
                 signal.reasoning.push(format!(
                     "Organization {} extracted from email domain.",
-                    signal.organization.as_ref().unwrap()
+                    signal.organization.as_ref().unwrap().domain
                 ));
             }
 
